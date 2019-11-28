@@ -12,8 +12,7 @@ let package = Package(
             targets: ["CompatibleContextMenuInteraction"]),
     ],
     targets: [
-		.systemLibrary(name: "UIKit"),
-		.target(name: "CompatibleContextMenuInteraction", dependencies: ["UIKit"]),
+		.target(name: "CompatibleContextMenuInteraction"),
         .testTarget(
             name: "CompatibleContextMenuInteractionTests",
             dependencies: ["CompatibleContextMenuInteraction"]
