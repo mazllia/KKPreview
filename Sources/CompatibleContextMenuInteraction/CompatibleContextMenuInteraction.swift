@@ -19,12 +19,6 @@ public struct Model {
 	public let commit: Commit
 }
 
-public extension UIPreviewAction {
-	convenience init(_ action: Model.Action) {
-		self.init(title: action.title, style: action.destructive ? .destructive : .default) { _, _ in action.handler() }
-	}
-}
-
 struct IndexedViewCellModel {
 	let model: Model
 	let indexPath: IndexPath
@@ -32,6 +26,12 @@ struct IndexedViewCellModel {
 }
 
 // MARK: Bridge
+public extension UIPreviewAction {
+	convenience init(_ action: Model.Action) {
+		self.init(title: action.title, style: action.destructive ? .destructive : .default) { _, _ in action.handler() }
+	}
+}
+
 @available(iOS 13, *)
 public extension UIAction {
 	convenience init(_ action: Model.Action) {
