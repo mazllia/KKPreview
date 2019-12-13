@@ -139,6 +139,15 @@ private extension UITableView {
 
 // MARK: Convenient Functions
 private extension UITableView {
+	/// - parameter location: location in table view
+	/// - returns: point in cell and index path of such cell
+	func convert(_ location: CGPoint) -> (indexPath: IndexPath, location: CGPoint)? {
+		guard
+			let indexPath = indexPathForRow(at: location),
+			let cell = cellForRow(at: indexPath) else { return nil }
+		return (indexPath, convert(location, to: cell))
+	}
+	
 	func commit(delegate: TableViewDelegate, model: Model) {
 		let viewController = model.previewingViewController
 		switch model.commit {
@@ -164,15 +173,6 @@ private extension UITableView {
 
 // MARK: UIViewControllerPreviewingDelegate
 extension UITableView: UIViewControllerPreviewingDelegate {
-	/// - parameter location: location in table view
-	/// - returns: point in cell and index path of such cell
-	private func convert(_ location: CGPoint) -> (indexPath: IndexPath, location: CGPoint)? {
-		guard
-			let indexPath = indexPathForRow(at: location),
-			let cell = cellForRow(at: indexPath) else { return nil }
-		return (indexPath, convert(location, to: cell))
-	}
-	
 	public func previewingContext(_ previewingContext: UIViewControllerPreviewing, viewControllerForLocation location: CGPoint) -> UIViewController? {
 		guard
 			let storage = storage,
