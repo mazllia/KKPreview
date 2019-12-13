@@ -228,5 +228,15 @@ public protocol CompatibleContextMenuCollectionView {
 	var contextMenuDelegate: CollectionViewDelegate { get }
 }
 
-}
+// MARK: - Storage -
 
+internal final class Storage<T> {
+	// FIXME: retain cycle
+	let delegate: T
+	let context: UIViewControllerPreviewing
+	var model: IndexedViewCellModel? = nil
+	init(delegate: T, context: UIViewControllerPreviewing) {
+		self.delegate = delegate
+		self.context = context
+	}
+}
