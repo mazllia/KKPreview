@@ -128,12 +128,33 @@ public extension UITableView {
 }
 
 // MARK: UICollectionView
-public protocol CollectionViewDelegate {
+public protocol CollectionViewDelegate: UIViewController {
 	func model(in collectionView: UICollectionView, on indexPath: IndexPath, at pointInCell: CGPoint) -> Model?
 }
 
-public protocol CompatibleContextMenuCollectionView {
-	var contextMenuDelegate: CollectionViewDelegate { get }
+public extension UICollectionView {
+	var compatibleContextMenuDelegate: CollectionViewDelegate? {
+		get { storage?.delegate }
+		set {
+			guard compatibleContextMenuDelegate !== newValue else { return }
+			
+			if let storage = storage {
+				storage.delegate.unregisterForPreviewing(withContext: storage.context)
+				if #available(iOS 13.0, *) {
+					removeInteraction(UIContextMenuInteraction(delegate: self))
+				}
+			}
+			
+			guard let newValue = newValue else {
+				return storage = nil
+			}
+			let context = newValue.registerForPreviewing(with: self, sourceView: self)
+			if #available(iOS 13.0, *) {
+				addInteraction(UIContextMenuInteraction(delegate: self))
+			}
+			storage = Storage(delegate: newValue, context: context)
+		}
+	}
 }
 
 // MARK: - Storage -
