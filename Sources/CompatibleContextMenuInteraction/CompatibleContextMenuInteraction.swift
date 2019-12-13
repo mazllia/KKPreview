@@ -156,19 +156,6 @@ private extension UITableView {
 		case let .custom(handler): handler?(viewController)
 		}
 	}
-	
-	@available(iOS 13.0, *)
-	var targetedPreview: UITargetedPreview? {
-		guard
-			let model = storage?.model,
-			let cell = cellForRow(at: model.indexPath) else { return nil }
-		
-		if let originatedRect = model.model.originatedFrom {
-			return .init(view: cell, rounded: originatedRect)
-		} else {
-			return .init(view: cell)
-		}
-	}
 }
 
 // MARK: UIViewControllerPreviewingDelegate
@@ -209,6 +196,18 @@ extension UITableView: UIContextMenuInteractionDelegate {
 					 previewProvider: { model.previewingViewController },
 					 actionProvider: { _ in UIMenu(actions: model.actions) }
 		)
+	}
+	
+	private var targetedPreview: UITargetedPreview? {
+		guard
+			let model = storage?.model,
+			let cell = cellForRow(at: model.indexPath) else { return nil }
+		
+		if let originatedRect = model.model.originatedFrom {
+			return .init(view: cell, rounded: originatedRect)
+		} else {
+			return .init(view: cell)
+		}
 	}
 	
 	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
