@@ -6,17 +6,31 @@ public struct Model {
 	public let originatedFrom: CGRect?
 	
 	public struct Action {
+		public typealias Handler = () -> Void
 		public let title: String
 		public let destructive: Bool
-		public let handler: () -> Void
+		public let handler: Handler
+		
+		public init(title: String, destructive: Bool = false, handler: @escaping Handler) {
+			self.title = title
+			self.destructive = destructive
+			self.handler = handler
+		}
 	}
-	public let actions: [Action] = []
+	public let actions: [Action]
 	
 	public enum Commit {
 		public typealias Handler = (UIViewController) -> Void
 		case show, showDetail, custom(Handler?)
 	}
 	public let commit: Commit
+	
+	public init(previewingViewController: UIViewController, originatedFrom: CGRect? = nil, actions: [Action] = [], commit: Commit) {
+		self.previewingViewController = previewingViewController
+		self.originatedFrom = originatedFrom
+		self.actions = actions
+		self.commit = commit
+	}
 }
 
 struct IndexedViewCellModel {
@@ -88,12 +102,7 @@ public protocol TableViewDelegate: UITableViewController {
 	func model(in tableView: UITableView, on indexPath: IndexPath, at pointInCell: CGPoint) -> Model?
 }
 
-public protocol CompatibleContextMenuTableView: UITableView, UIViewControllerPreviewingDelegate, UIContextMenuInteractionDelegate {
-	var compatibleContextMenuDelegate: TableViewDelegate? { get set }
-}
-
-public extension CompatibleContextMenuTableView {
-	// TODO: property wrapper
+public extension UITableView {
 	var compatibleContextMenuDelegate: TableViewDelegate? {
 		get { storage?.delegate }
 		set {
@@ -121,7 +130,7 @@ public extension CompatibleContextMenuTableView {
 // MARK: Storage
 private extension UITableView {
 	typealias StorageType = Storage<TableViewDelegate>
-	static var contextMenuStorage = [UITableView: StorageType]()
+	private static var contextMenuStorage = [UITableView: StorageType]()
 	var storage: StorageType? {
 		get { Self.contextMenuStorage[self] }
 		set { Self.contextMenuStorage[self] = newValue }
@@ -129,7 +138,7 @@ private extension UITableView {
 }
 
 // MARK: Convenient Functions
-private extension CompatibleContextMenuTableView {
+private extension UITableView {
 	func commit(delegate: TableViewDelegate, model: Model) {
 		let viewController = model.previewingViewController
 		switch model.commit {
@@ -154,7 +163,7 @@ private extension CompatibleContextMenuTableView {
 }
 
 // MARK: UIViewControllerPreviewingDelegate
-public extension CompatibleContextMenuTableView {
+extension UITableView: UIViewControllerPreviewingDelegate {
 	/// - parameter location: location in table view
 	/// - returns: point in cell and index path of such cell
 	private func convert(_ location: CGPoint) -> (indexPath: IndexPath, location: CGPoint)? {
@@ -164,7 +173,7 @@ public extension CompatibleContextMenuTableView {
 		return (indexPath, convert(location, to: cell))
 	}
 	
-	func previewingContext(_ previewingContext: UIViewControllerPreviewing, viewControllerForLocation location: CGPoint) -> UIViewController? {
+	public func previewingContext(_ previewingContext: UIViewControllerPreviewing, viewControllerForLocation location: CGPoint) -> UIViewController? {
 		guard
 			let storage = storage,
 			let cellInfo = convert(location),
@@ -177,7 +186,7 @@ public extension CompatibleContextMenuTableView {
 		return model.previewingViewController
 	}
 	
-	func previewingContext(_ previewingContext: UIViewControllerPreviewing, commit viewControllerToCommit: UIViewController) {
+	public func previewingContext(_ previewingContext: UIViewControllerPreviewing, commit viewControllerToCommit: UIViewController) {
 		guard
 			let storage = storage,
 			let model = storage.model else { return }
@@ -188,8 +197,8 @@ public extension CompatibleContextMenuTableView {
 
 // MARK: UIContextMenuInteractionDelegate
 @available(iOS 13.0, *)
-public extension CompatibleContextMenuTableView {
-	func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+extension UITableView: UIContextMenuInteractionDelegate {
+	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
 		guard
 			let storage = storage,
 			let cellInfo = convert(location),
@@ -202,15 +211,15 @@ public extension CompatibleContextMenuTableView {
 		)
 	}
 	
-	func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
 		targetedPreview
 	}
 	
-	func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
 		targetedPreview
 	}
 	
-	func contextMenuInteraction(_ interaction: UIContextMenuInteraction, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
+	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
 		guard
 			let storage = storage,
 			let model = storage.model else { return }
