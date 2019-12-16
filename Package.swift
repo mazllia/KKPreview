@@ -2,20 +2,20 @@
 
 import PackageDescription
 let package = Package(
-    name: "CompatibleContextMenuInteraction",
+    name: "KKPreview",
 	platforms: [
 		.iOS(SupportedPlatform.IOSVersion.v9)
 	],
     products: [
         .library(
-            name: "CompatibleContextMenuInteraction",
-            targets: ["CompatibleContextMenuInteraction"]),
+            name: "KKPreview",
+            targets: ["KKPreview"]),
     ],
     targets: [
-		.target(name: "CompatibleContextMenuInteraction"),
+		.target(name: "KKPreview"),
         .testTarget(
-            name: "CompatibleContextMenuInteractionTests",
-            dependencies: ["CompatibleContextMenuInteraction"]
+            name: "KKPreviewTests",
+            dependencies: ["KKPreview"]
 		),
     ],
 	swiftLanguageVersions: [.v4_2, .v5]

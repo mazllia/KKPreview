@@ -1,9 +1,9 @@
-import UIKit
+import Foundation
 
 // MARK: Storage
-extension UITableView {
-	typealias StorageType = Storage<TableViewDelegate>
-	private static var contextMenuStorage = [UITableView: StorageType]()
+extension UICollectionView {
+	typealias StorageType = Storage<CollectionViewDelegate>
+	private static var contextMenuStorage = [UICollectionView: StorageType]()
 	var storage: StorageType? {
 		get { Self.contextMenuStorage[self] }
 		set { Self.contextMenuStorage[self] = newValue }
@@ -11,7 +11,7 @@ extension UITableView {
 }
 
 // MARK: UIViewControllerPreviewingDelegate
-extension UITableView: UIViewControllerPreviewingDelegate {
+extension UICollectionView: UIViewControllerPreviewingDelegate {
 	public func previewingContext(_ previewingContext: UIViewControllerPreviewing, viewControllerForLocation location: CGPoint) -> UIViewController? {
 		guard
 			let storage = storage,
@@ -36,7 +36,7 @@ extension UITableView: UIViewControllerPreviewingDelegate {
 
 // MARK: UIContextMenuInteractionDelegate
 @available(iOS 13.0, *)
-extension UITableView: UIContextMenuInteractionDelegate {
+extension UICollectionView: UIContextMenuInteractionDelegate {
 	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
 		guard
 			let storage = storage,
@@ -53,7 +53,7 @@ extension UITableView: UIContextMenuInteractionDelegate {
 	private var targetedPreview: UITargetedPreview? {
 		guard
 			let model = storage?.model,
-			let cell = cellForRow(at: model.indexPath) else { return nil }
+			let cell = cellForItem(at: model.indexPath) else { return nil }
 		
 		if let originatedRect = model.model.originatedFrom {
 			return .init(view: cell, rounded: originatedRect)
@@ -79,22 +79,22 @@ extension UITableView: UIContextMenuInteractionDelegate {
 	}
 }
 
-private extension UITableView {
+private extension UICollectionView {
 	/// - parameter location: location in table view
 	/// - returns: point in cell and index path of such cell
 	func convert(_ location: CGPoint) -> (indexPath: IndexPath, location: CGPoint)? {
 		guard
-			let indexPath = indexPathForRow(at: location),
-			let cell = cellForRow(at: indexPath) else { return nil }
+			let indexPath = indexPathForItem(at: location),
+			let cell = cellForItem(at: indexPath) else { return nil }
 		return (indexPath, convert(location, to: cell))
 	}
 	
-	func commit(delegate: TableViewDelegate, model: Model) {
+	func commit(delegate: CollectionViewDelegate, model: KKPreviewModel) {
 		let viewController = model.previewingViewController
-		switch model.commit {
+		switch model.commit.style {
 		case .show: delegate.show(viewController, sender: self)
 		case .showDetail: delegate.showDetailViewController(viewController, sender: self)
-		case let .custom(handler): handler?(viewController)
+		case .custom: model.commit.handler?(viewController)
 		}
 	}
 }
