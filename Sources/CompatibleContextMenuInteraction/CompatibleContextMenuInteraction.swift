@@ -1,6 +1,10 @@
 import UIKit
 
 // MARK: - Model -
+public protocol PreviewableViewController: UIViewController {
+	var previewActions: [Model.Action] { get }
+}
+
 public struct Model {
 	public let previewingViewController: UIViewController
 	public let originatedFrom: CGRect?
@@ -30,6 +34,10 @@ public struct Model {
 		self.originatedFrom = originatedFrom
 		self.actions = actions
 		self.commit = commit
+	}
+	
+	public init<T: PreviewableViewController>(previewingViewController: T, originatedFrom: CGRect? = nil, commit: Commit) {
+		self.init(previewingViewController: previewingViewController, originatedFrom: originatedFrom, actions: previewingViewController.previewActions, commit: commit)
 	}
 }
 
