@@ -98,7 +98,7 @@ public protocol CompatibleContextMenuView: UIView {
 }
 
 // MARK: - UITableView
-public protocol TableViewDelegate: UITableViewController {
+public protocol TableViewDelegate: UIViewController {
 	func model(in tableView: UITableView, on indexPath: IndexPath, at pointInCell: CGPoint) -> Model?
 }
 
