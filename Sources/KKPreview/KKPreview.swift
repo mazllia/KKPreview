@@ -10,9 +10,9 @@ final public class KKPreviewModel: NSObject {
 	public var originate: CGRect { originatedFrom ?? .null }
 	
 	public let actions: [KKPreviewAction]
-	public let commit: KKPreviewCommitStyle
+	public let commit: KKPreviewCommit
 	
-	public init(previewingViewController: UIViewController, originatedFrom: CGRect? = nil, actions: [KKPreviewAction] = [], commit: KKPreviewCommitStyle) {
+	public init(previewingViewController: UIViewController, originatedFrom: CGRect? = nil, actions: [KKPreviewAction] = [], commit: KKPreviewCommit) {
 		self.previewingViewController = previewingViewController
 		self.originatedFrom = originatedFrom
 		self.actions = actions
@@ -21,7 +21,7 @@ final public class KKPreviewModel: NSObject {
 	}
 
 	@available(swift, obsoleted: 1)
-	public convenience init(previewingViewController: UIViewController, originatedFrom: CGRect = .null, actions: [KKPreviewAction] = [], commit: KKPreviewCommitStyle) {
+	public convenience init(previewingViewController: UIViewController, originatedFrom: CGRect = .null, actions: [KKPreviewAction] = [], commit: KKPreviewCommit) {
 		self.init(previewingViewController: previewingViewController, originatedFrom: originatedFrom == .null ? nil : originatedFrom, actions: actions, commit: commit)
 	}
 }
@@ -41,25 +41,25 @@ final public class KKPreviewAction: NSObject {
 }
 
 @objcMembers
-final public class KKPreviewCommitStyle: NSObject {
+final public class KKPreviewCommit: NSObject {
 	public typealias Handler = (UIViewController) -> Void
 	let handler: Handler?
 	
-	@objc public enum Style: UInt {
+	@objc public enum KKPreviewCommitStyle: UInt {
 		case show, showDetail, custom
 	}
-	public let style: Style
+	public let style: KKPreviewCommitStyle
 	
-	init(style: Style, handler: Handler? = nil) {
+	init(style: KKPreviewCommitStyle, handler: Handler? = nil) {
 		self.style = style
 		self.handler = handler
 		super.init()
 	}
 }
 
-@objc extension KKPreviewCommitStyle {
-	public static let show = KKPreviewCommitStyle(style: .show)
-	public static let showDetail = KKPreviewCommitStyle(style: .showDetail)
+@objc extension KKPreviewCommit {
+	public static let show = KKPreviewCommit(style: .show)
+	public static let showDetail = KKPreviewCommit(style: .showDetail)
 	public static func custom(_ handler: @escaping Handler) -> Self { .init(style: .custom, handler: handler) }
 }
 
