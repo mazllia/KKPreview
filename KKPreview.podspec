@@ -10,6 +10,14 @@ Pod::Spec.new do |s|
   s.swift_versions   = ['4.2', '5.0', '5.1']
   s.source_files     = "Sources/#{s.name}/**/*"
   s.frameworks       = 'UIKit'
-  
+
+  s.default_subspecs = 'empty'
+
+  s.subspec 'empty'
+
+  s.subspec 'PreviewableViewController' do |ss|
+    ss.source_files  = 'Sources/PreviewableViewController/**/*'
+  end
+
   s.dependency 'SingleObjectAssociatable', '~> 1.0'
 end
