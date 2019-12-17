@@ -67,7 +67,9 @@ extension UITableView: UIContextMenuInteractionDelegate {
 			let delegate = storage.delegate,
 			let model = storage.model else { return }
 		assert(model.model.previewingViewController === animator.previewViewController)
-		commit(delegate: delegate, model: model.model)
+		animator.addCompletion {
+			self.commit(delegate: delegate, model: model.model)
+		}
 	}
 }
 
