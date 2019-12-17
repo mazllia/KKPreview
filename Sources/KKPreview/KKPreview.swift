@@ -190,10 +190,8 @@ extension SingleObjectAssociatable {
 
 extension UICollectionView: SingleObjectAssociatable {
 	public typealias AssociateType = Storage<CollectionViewDelegate>
-	public static var associateKey: StaticString = "storage"
 }
 
 extension UITableView: SingleObjectAssociatable {
 	public typealias AssociateType = Storage<TableViewDelegate>
-	public static var associateKey: StaticString = "storage"
 }
