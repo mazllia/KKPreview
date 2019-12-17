@@ -8,16 +8,16 @@ Pod::Spec.new do |s|
   s.source           = { :git => "#{s.homepage}.git", :tag => s.version }
   s.ios.deployment_target = '9.0'
   s.swift_versions   = ['4.2', '5.0', '5.1']
-  s.source_files     = "Sources/#{s.name}/**/*"
   s.frameworks       = 'UIKit'
 
-  s.default_subspecs = 'empty'
+  s.default_subspecs = 'Core'
 
-  s.subspec 'empty'
+  s.subspec 'Core' do |ss|
+    ss.source_files = 'Sources/KKPreview/**/*'
+    ss.dependency 'SingleObjectAssociatable', '~> 1.0'
+  end
 
   s.subspec 'PreviewableViewController' do |ss|
     ss.source_files  = 'Sources/PreviewableViewController/**/*'
   end
-
-  s.dependency 'SingleObjectAssociatable', '~> 1.0'
 end
