@@ -5,10 +5,11 @@ Pod::Spec.new do |s|
   s.homepage         = "https://gitlab.kkinternal.com/kkbox-ios/#{s.name}"
   s.license          = { :type => 'Private', :text => 'All rights reserved to KKBOX.' }
   s.author           = { 'Dai, Peng-Yang' => 'pengyangdai@kkbox.com' }
-  s.source           = { :git => "https://gitlab.kkinternal.com/pengyangdai/CompatibleContextMenuInteraction.git", :branch => 'master' }
+  s.source           = { :git => "#{s.homepage}.git", :tag => s.version }
   s.ios.deployment_target = '9.0'
-  s.swift_versions = ['4.2', '5.0', '5.1']
-  s.source_files = 'Sources/KKPreview/**/*'
-  s.frameworks = 'UIKit'
+  s.swift_versions   = ['4.2', '5.0', '5.1']
+  s.source_files     = "Sources/#{s.name}/**/*"
+  s.frameworks       = 'UIKit'
+  
   s.dependency 'SingleObjectAssociatable', '~> 1.0'
 end
