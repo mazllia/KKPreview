@@ -10,4 +10,5 @@ Pod::Spec.new do |s|
   s.swift_versions = ['4.2', '5.0', '5.1']
   s.source_files = 'Sources/KKPreview/**/*'
   s.frameworks = 'UIKit'
+  s.dependency 'SingleObjectAssociatable', '~> 1.0'
 end

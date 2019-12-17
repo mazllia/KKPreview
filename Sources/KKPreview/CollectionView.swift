@@ -1,20 +1,10 @@
 import Foundation
 
-// MARK: Storage
-extension UICollectionView {
-	typealias StorageType = Storage<CollectionViewDelegate>
-	private static var contextMenuStorage = [UICollectionView: StorageType]()
-	var storage: StorageType? {
-		get { Self.contextMenuStorage[self] }
-		set { Self.contextMenuStorage[self] = newValue }
-	}
-}
-
 // MARK: UIViewControllerPreviewingDelegate
 extension UICollectionView: UIViewControllerPreviewingDelegate {
 	public func previewingContext(_ previewingContext: UIViewControllerPreviewing, viewControllerForLocation location: CGPoint) -> UIViewController? {
 		guard
-			let storage = storage,
+			let storage = associateValue,
 			let cellInfo = convert(location),
 			let model = storage.delegate.model(in: self, on: cellInfo.indexPath, at: cellInfo.location) else { return nil }
 		storage.model = IndexedViewCellModel(model: model, indexPath: cellInfo.indexPath, pointInCell: cellInfo.location)
@@ -27,7 +17,7 @@ extension UICollectionView: UIViewControllerPreviewingDelegate {
 	
 	public func previewingContext(_ previewingContext: UIViewControllerPreviewing, commit viewControllerToCommit: UIViewController) {
 		guard
-			let storage = storage,
+			let storage = associateValue,
 			let model = storage.model else { return }
 		assert(model.model.previewingViewController === viewControllerToCommit)
 		commit(delegate: storage.delegate, model: model.model)
@@ -39,7 +29,7 @@ extension UICollectionView: UIViewControllerPreviewingDelegate {
 extension UICollectionView: UIContextMenuInteractionDelegate {
 	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
 		guard
-			let storage = storage,
+			let storage = associateValue,
 			let cellInfo = convert(location),
 			let model = storage.delegate.model(in: self, on: cellInfo.indexPath, at: cellInfo.location) else { return nil }
 		storage.model = IndexedViewCellModel(model: model, indexPath: cellInfo.indexPath, pointInCell: cellInfo.location)
@@ -52,7 +42,7 @@ extension UICollectionView: UIContextMenuInteractionDelegate {
 	
 	private var targetedPreview: UITargetedPreview? {
 		guard
-			let model = storage?.model,
+			let model = associateValue?.model,
 			let cell = cellForItem(at: model.indexPath) else { return nil }
 		
 		if let originatedRect = model.model.originatedFrom {
@@ -72,7 +62,7 @@ extension UICollectionView: UIContextMenuInteractionDelegate {
 	
 	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
 		guard
-			let storage = storage,
+			let storage = associateValue,
 			let model = storage.model else { return }
 		assert(model.model.previewingViewController === animator.previewViewController)
 		commit(delegate: storage.delegate, model: model.model)

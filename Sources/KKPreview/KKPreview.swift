@@ -63,7 +63,7 @@ final public class KKPreviewCommit: NSObject {
 	public static func custom(_ handler: @escaping Handler) -> Self { .init(style: .custom, handler: handler) }
 }
 
-struct IndexedViewCellModel {
+public struct IndexedViewCellModel {
 	let model: KKPreviewModel
 	let indexPath: IndexPath
 	let pointInCell: CGPoint
@@ -118,11 +118,11 @@ public protocol TableViewDelegate: UIViewController {
 
 public extension UITableView {
 	var compatibleContextMenuDelegate: TableViewDelegate? {
-		get { storage?.delegate }
+		get { associateValue?.delegate }
 		set {
 			guard compatibleContextMenuDelegate !== newValue else { return }
 			
-			if let storage = storage {
+			if let storage = associateValue {
 				storage.delegate.unregisterForPreviewing(withContext: storage.context)
 				if #available(iOS 13.0, *) {
 					removeInteraction(UIContextMenuInteraction(delegate: self))
@@ -130,13 +130,13 @@ public extension UITableView {
 			}
 			
 			guard let newValue = newValue else {
-				return storage = nil
+				return associateValue = nil
 			}
 			let context = newValue.registerForPreviewing(with: self, sourceView: self)
 			if #available(iOS 13.0, *) {
 				addInteraction(UIContextMenuInteraction(delegate: self))
 			}
-			storage = Storage(delegate: newValue, context: context)
+			associateValue = Storage(delegate: newValue, context: context)
 		}
 	}
 }
@@ -148,11 +148,11 @@ public protocol CollectionViewDelegate: UIViewController {
 
 public extension UICollectionView {
 	var compatibleContextMenuDelegate: CollectionViewDelegate? {
-		get { storage?.delegate }
+		get { associateValue?.delegate }
 		set {
 			guard compatibleContextMenuDelegate !== newValue else { return }
 			
-			if let storage = storage {
+			if let storage = associateValue {
 				storage.delegate.unregisterForPreviewing(withContext: storage.context)
 				if #available(iOS 13.0, *) {
 					removeInteraction(UIContextMenuInteraction(delegate: self))
@@ -160,20 +160,19 @@ public extension UICollectionView {
 			}
 			
 			guard let newValue = newValue else {
-				return storage = nil
+				return associateValue = nil
 			}
 			let context = newValue.registerForPreviewing(with: self, sourceView: self)
 			if #available(iOS 13.0, *) {
 				addInteraction(UIContextMenuInteraction(delegate: self))
 			}
-			storage = Storage(delegate: newValue, context: context)
+			associateValue = Storage(delegate: newValue, context: context)
 		}
 	}
 }
 
 // MARK: - Storage -
-
-internal final class Storage<T> {
+public final class Storage<T> {
 	// FIXME: retain cycle
 	let delegate: T
 	let context: UIViewControllerPreviewing
@@ -182,4 +181,19 @@ internal final class Storage<T> {
 		self.delegate = delegate
 		self.context = context
 	}
+}
+
+import SingleObjectAssociatable
+extension SingleObjectAssociatable {
+	public static var associatePolicy: objc_AssociationPolicy { .OBJC_ASSOCIATION_RETAIN }
+}
+
+extension UICollectionView: SingleObjectAssociatable {
+	public typealias AssociateType = Storage<CollectionViewDelegate>
+	public static var associateKey: StaticString = "storage"
+}
+
+extension UITableView: SingleObjectAssociatable {
+	public typealias AssociateType = Storage<TableViewDelegate>
+	public static var associateKey: StaticString = "storage"
 }
