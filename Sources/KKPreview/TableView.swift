@@ -6,7 +6,7 @@ extension UITableView: UIViewControllerPreviewingDelegate {
 		guard
 			let storage = associateValue,
 			let cellInfo = convert(location),
-			let model = storage.delegate.model(in: self, on: cellInfo.indexPath, at: cellInfo.location) else { return nil }
+			let model = storage.delegate?.model(in: self, on: cellInfo.indexPath, at: cellInfo.location) else { return nil }
 		storage.model = IndexedViewCellModel(model: model, indexPath: cellInfo.indexPath, pointInCell: cellInfo.location)
 		
 		if let sourceRect = model.originatedFrom {
@@ -18,9 +18,10 @@ extension UITableView: UIViewControllerPreviewingDelegate {
 	public func previewingContext(_ previewingContext: UIViewControllerPreviewing, commit viewControllerToCommit: UIViewController) {
 		guard
 			let storage = associateValue,
+			let delegate = storage.delegate,
 			let model = storage.model else { return }
 		assert(model.model.previewingViewController === viewControllerToCommit)
-		commit(delegate: storage.delegate, model: model.model)
+		commit(delegate: delegate, model: model.model)
 	}
 }
 
@@ -31,7 +32,7 @@ extension UITableView: UIContextMenuInteractionDelegate {
 		guard
 			let storage = associateValue,
 			let cellInfo = convert(location),
-			let model = storage.delegate.model(in: self, on: cellInfo.indexPath, at: cellInfo.location) else { return nil }
+			let model = storage.delegate?.model(in: self, on: cellInfo.indexPath, at: cellInfo.location) else { return nil }
 		storage.model = IndexedViewCellModel(model: model, indexPath: cellInfo.indexPath, pointInCell: cellInfo.location)
 		
 		return .init(identifier: nil,
@@ -63,9 +64,10 @@ extension UITableView: UIContextMenuInteractionDelegate {
 	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
 		guard
 			let storage = associateValue,
+			let delegate = storage.delegate,
 			let model = storage.model else { return }
 		assert(model.model.previewingViewController === animator.previewViewController)
-		commit(delegate: storage.delegate, model: model.model)
+		commit(delegate: delegate, model: model.model)
 	}
 }
 

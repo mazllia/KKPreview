@@ -123,7 +123,7 @@ public extension UITableView {
 			guard compatibleContextMenuDelegate !== newValue else { return }
 			
 			if let storage = associateValue {
-				storage.delegate.unregisterForPreviewing(withContext: storage.context)
+				storage.delegate?.unregisterForPreviewing(withContext: storage.context)
 				if #available(iOS 13.0, *) {
 					removeInteraction(UIContextMenuInteraction(delegate: self))
 				}
@@ -136,7 +136,7 @@ public extension UITableView {
 			if #available(iOS 13.0, *) {
 				addInteraction(UIContextMenuInteraction(delegate: self))
 			}
-			associateValue = Storage(delegate: newValue, context: context)
+			associateValue = .init(delegate: newValue, context: context)
 		}
 	}
 }
@@ -153,7 +153,7 @@ public extension UICollectionView {
 			guard compatibleContextMenuDelegate !== newValue else { return }
 			
 			if let storage = associateValue {
-				storage.delegate.unregisterForPreviewing(withContext: storage.context)
+				storage.delegate?.unregisterForPreviewing(withContext: storage.context)
 				if #available(iOS 13.0, *) {
 					removeInteraction(UIContextMenuInteraction(delegate: self))
 				}
@@ -166,20 +166,33 @@ public extension UICollectionView {
 			if #available(iOS 13.0, *) {
 				addInteraction(UIContextMenuInteraction(delegate: self))
 			}
-			associateValue = Storage(delegate: newValue, context: context)
+			associateValue = .init(delegate: newValue, context: context)
 		}
 	}
 }
 
 // MARK: - Storage -
-public final class Storage<T> {
-	// FIXME: retain cycle
-	let delegate: T
+public class Storage {
 	let context: UIViewControllerPreviewing
 	var model: IndexedViewCellModel? = nil
-	init(delegate: T, context: UIViewControllerPreviewing) {
-		self.delegate = delegate
+	init(context: UIViewControllerPreviewing) {
 		self.context = context
+	}
+}
+
+public final class CollectionViewStorage: Storage {
+	weak var delegate: CollectionViewDelegate?
+	init(delegate: CollectionViewDelegate, context: UIViewControllerPreviewing) {
+		self.delegate = delegate
+		super.init(context: context)
+	}
+}
+
+public final class TaleViewStorage: Storage {
+	weak var delegate: TableViewDelegate?
+	init(delegate: TableViewDelegate, context: UIViewControllerPreviewing) {
+		self.delegate = delegate
+		super.init(context: context)
 	}
 }
 
@@ -189,9 +202,9 @@ extension SingleObjectAssociatable {
 }
 
 extension UICollectionView: SingleObjectAssociatable {
-	public typealias AssociateType = Storage<CollectionViewDelegate>
+	public typealias AssociateType = CollectionViewStorage
 }
 
 extension UITableView: SingleObjectAssociatable {
-	public typealias AssociateType = Storage<TableViewDelegate>
+	public typealias AssociateType = TaleViewStorage
 }
