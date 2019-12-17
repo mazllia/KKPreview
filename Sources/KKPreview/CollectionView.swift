@@ -22,6 +22,7 @@ extension UICollectionView: UIViewControllerPreviewingDelegate {
 			let model = storage.model else { return }
 		assert(model.model.previewingViewController === viewControllerToCommit)
 		commit(delegate: delegate, model: model.model)
+		storage.model = nil
 	}
 }
 
@@ -69,6 +70,7 @@ extension UICollectionView: UIContextMenuInteractionDelegate {
 		assert(model.model.previewingViewController === animator.previewViewController)
 		animator.addCompletion {
 			self.commit(delegate: delegate, model: model.model)
+			storage.model = nil
 		}
 	}
 }
