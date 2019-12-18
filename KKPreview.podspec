@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
 
   s.subspec 'Core' do |ss|
     ss.source_files = 'Sources/KKPreview/**/*'
-    ss.dependency 'SingleObjectAssociataing', '~> 1.0'
+    ss.dependency 'SingleObjectAssociating', '~> 1.0'
   end
 
   s.subspec 'PreviewableViewController' do |ss|
