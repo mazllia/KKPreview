@@ -85,7 +85,7 @@ private extension UICollectionView {
 		return (indexPath, convert(location, to: cell))
 	}
 	
-	func commit(delegate: CollectionViewDelegate, model: KKPreviewModel) {
+	func commit(delegate: PreviewDelegate, model: KKPreviewModel) {
 		let viewController = model.previewingViewController
 		switch model.commit.style {
 		case .show: delegate.show(viewController, sender: self)

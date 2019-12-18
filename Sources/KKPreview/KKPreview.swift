@@ -70,28 +70,28 @@ public struct IndexedViewCellModel {
 }
 
 // MARK: Bridge
-public extension UIPreviewAction {
+@objc public extension UIPreviewAction {
 	convenience init(_ action: KKPreviewAction) {
 		self.init(title: action.title, style: action.destructive ? .destructive : .default) { _, _ in action.handler() }
 	}
 }
 
 @available(iOS 13, *)
-public extension UIAction {
+@objc public extension UIAction {
 	convenience init(_ action: KKPreviewAction) {
 		self.init(title: action.title, attributes: action.destructive ? [.destructive] : []) { _ in action.handler() }
 	}
 }
 
 @available(iOS 13, *)
-public extension UIMenu {
+@objc public extension UIMenu {
 	convenience init(actions: [KKPreviewAction]) {
 		self.init(title: "", children: actions.map { UIAction($0) })
 	}
 }
 
 @available(iOS 13, *)
-public extension UITargetedPreview {
+@objc public extension UITargetedPreview {
 	@objc convenience init(view: UIView, rounded rect: CGRect, cornerRadius: CGFloat = 3) {
 		let parameters = UIPreviewParameters()
 		parameters.visiblePath = .init(roundedRect: rect, cornerRadius: cornerRadius)
@@ -112,12 +112,13 @@ public protocol CompatibleContextMenuView: UIView {
 }
 
 // MARK: - UITableView
-public protocol TableViewDelegate: UIViewController {
+@objc public protocol TableViewDelegate {
 	func model(in tableView: UITableView, on indexPath: IndexPath, at pointInCell: CGPoint) -> KKPreviewModel?
 }
 
-public extension UITableView {
-	var compatibleContextMenuDelegate: TableViewDelegate? {
+@objc public extension UITableView {
+	typealias PreviewDelegate = UIViewController & TableViewDelegate
+	var compatibleContextMenuDelegate: PreviewDelegate? {
 		get { associateValue?.delegate }
 		set {
 			guard compatibleContextMenuDelegate !== newValue else { return }
@@ -142,12 +143,13 @@ public extension UITableView {
 }
 
 // MARK: UICollectionView
-public protocol CollectionViewDelegate: UIViewController {
+@objc public protocol CollectionViewDelegate: AnyObject {
 	func model(in collectionView: UICollectionView, on indexPath: IndexPath, at pointInCell: CGPoint) -> KKPreviewModel?
 }
 
-public extension UICollectionView {
-	var compatibleContextMenuDelegate: CollectionViewDelegate? {
+@objc public extension UICollectionView {
+	typealias PreviewDelegate = UIViewController & CollectionViewDelegate
+	var compatibleContextMenuDelegate: PreviewDelegate? {
 		get { associateValue?.delegate }
 		set {
 			guard compatibleContextMenuDelegate !== newValue else { return }
@@ -181,16 +183,18 @@ public class Storage {
 }
 
 public final class CollectionViewStorage: Storage {
-	weak var delegate: CollectionViewDelegate?
-	init(delegate: CollectionViewDelegate, context: UIViewControllerPreviewing) {
+	typealias Delegate = UICollectionView.PreviewDelegate
+	weak var delegate: Delegate?
+	init(delegate: Delegate, context: UIViewControllerPreviewing) {
 		self.delegate = delegate
 		super.init(context: context)
 	}
 }
 
 public final class TaleViewStorage: Storage {
-	weak var delegate: TableViewDelegate?
-	init(delegate: TableViewDelegate, context: UIViewControllerPreviewing) {
+	typealias Delegate = UITableView.PreviewDelegate
+	weak var delegate: Delegate?
+	init(delegate: Delegate, context: UIViewControllerPreviewing) {
 		self.delegate = delegate
 		super.init(context: context)
 	}
