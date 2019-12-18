@@ -102,16 +102,7 @@ public struct IndexedViewCellModel {
 }
 
 // MARK: - Compatible Protocols -
-// MARK: - UIView
-public protocol ViewDelegate {
-	func model(in view: UIView, at point: CGPoint) -> KKPreviewModel?
-}
-
-public protocol CompatibleContextMenuView: UIView {
-	func registerForCompatibleContextMenu(with delegate: ViewDelegate)
-}
-
-// MARK: - UITableView
+// MARK: UITableView
 @objc public protocol TableViewDelegate {
 	func model(in tableView: UITableView, on indexPath: IndexPath, at pointInCell: CGPoint) -> KKPreviewModel?
 }
