@@ -191,15 +191,15 @@ public final class TaleViewStorage: Storage {
 	}
 }
 
-import SingleObjectAssociatable
-extension SingleObjectAssociatable {
+import SingleObjectAssociating
+extension SingleObjectAssociating {
 	public static var associatePolicy: objc_AssociationPolicy { .OBJC_ASSOCIATION_RETAIN }
 }
 
-extension UICollectionView: SingleObjectAssociatable {
+extension UICollectionView: SingleObjectAssociating {
 	public typealias AssociateType = CollectionViewStorage
 }
 
-extension UITableView: SingleObjectAssociatable {
+extension UITableView: SingleObjectAssociating {
 	public typealias AssociateType = TaleViewStorage
 }
