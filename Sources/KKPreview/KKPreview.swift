@@ -63,10 +63,13 @@ final public class KKPreviewCommit: NSObject {
 	public static func custom(_ handler: @escaping Handler) -> Self { .init(style: .custom, handler: handler) }
 }
 
-public struct IndexedViewCellModel {
+final class PointedModel {
 	let model: KKPreviewModel
-	let indexPath: IndexPath
-	let pointInCell: CGPoint
+	let point: CGPoint
+	init(model: KKPreviewModel, point: CGPoint) {
+		self.model = model
+		self.point = point
+	}
 }
 
 // MARK: Bridge
@@ -90,6 +93,137 @@ public struct IndexedViewCellModel {
 	}
 }
 
+// MARK: - Protocol -
+@objc public protocol ViewDelegate {
+	func view(_ view: UIView, modelAt point: CGPoint) -> KKPreviewModel?
+}
+
+@objc public protocol IndexedViewDelegate {
+	@objc optional func view(_ view: UIView, modelAt point: CGPoint) -> KKPreviewModel?
+	func indexedView(_ indexedView: UIView, modelOn indexPath: IndexPath, at pointInCell: CGPoint) -> KKPreviewModel?
+}
+
+public typealias PreviewDelegate = UIViewController & ViewDelegate
+public typealias IndexedPreviewDelegate = UIViewController & IndexedViewDelegate
+
+// MARK: - Delegate Property -
+@objc public extension UIView {
+	var previewDelegate: PreviewDelegate? {
+		get { viewStorage?.delegate }
+		set {
+			guard previewDelegate !== newValue else { return }
+			
+			if let storage = viewStorage {
+				storage.delegate?.unregisterForPreviewing(withContext: storage.context)
+				if #available(iOS 13.0, *) {
+					removeInteraction(UIContextMenuInteraction(delegate: self))
+				}
+			}
+			
+			guard let newValue = newValue else {
+				return viewStorage = nil
+			}
+			let context = newValue.registerForPreviewing(with: self, sourceView: self)
+			if #available(iOS 13.0, *) {
+				addInteraction(UIContextMenuInteraction(delegate: self))
+			}
+			viewStorage = .init(delegate: newValue, context: context)
+		}
+	}
+}
+
+@objc public extension UITableView {
+	var indexedPreviewDelegate: IndexedPreviewDelegate? {
+		get { indexViewStorage?.delegate }
+		set {
+			guard indexedPreviewDelegate !== newValue else { return }
+			
+			if let storage = indexViewStorage {
+				storage.delegate?.unregisterForPreviewing(withContext: storage.context)
+				if #available(iOS 13.0, *) {
+					removeInteraction(UIContextMenuInteraction(delegate: self))
+				}
+			}
+			
+			guard let newValue = newValue else {
+				return indexViewStorage = nil
+			}
+			let context = newValue.registerForPreviewing(with: self, sourceView: self)
+			if #available(iOS 13.0, *) {
+				addInteraction(UIContextMenuInteraction(delegate: self))
+			}
+			indexViewStorage = .init(delegate: newValue, context: context)
+		}
+	}
+}
+
+@objc public extension UICollectionView {
+	var indexedPreviewDelegate: IndexedPreviewDelegate? {
+		get { indexViewStorage?.delegate }
+		set {
+			guard indexedPreviewDelegate !== newValue else { return }
+			
+			if let storage = indexViewStorage {
+				storage.delegate?.unregisterForPreviewing(withContext: storage.context)
+				if #available(iOS 13.0, *) {
+					removeInteraction(UIContextMenuInteraction(delegate: self))
+				}
+			}
+			
+			guard let newValue = newValue else {
+				return indexViewStorage = nil
+			}
+			let context = newValue.registerForPreviewing(with: self, sourceView: self)
+			if #available(iOS 13.0, *) {
+				addInteraction(UIContextMenuInteraction(delegate: self))
+			}
+			indexViewStorage = .init(delegate: newValue, context: context)
+		}
+	}
+}
+
+// MARK: - Storage -
+final class Storage<T: UIViewController> {
+	let context: UIViewControllerPreviewing
+	var model: PointedModel? = nil
+	
+	weak var delegate: T?
+	init(delegate: T, context: UIViewControllerPreviewing) {
+		self.delegate = delegate
+		self.context = context
+	}
+}
+
+private let associatePolicy = objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN
+/// Shared key to override `viewStorage` & `indexViewStorage`
+private var associateKey: StaticString = "KKPreviewStorageAssociataingKey"
+
+typealias ViewStorage = Storage<PreviewDelegate>
+typealias IndexViewStorage = Storage<IndexedPreviewDelegate>
+
+// FIXME: assigning both `viewStorage` and `indexViewStorage` cannot correctly unregister oldValue
+extension UIView {
+	var viewStorage: ViewStorage? {
+		get { objc_getAssociatedObject(self, &associateKey) as? ViewStorage }
+		set { objc_setAssociatedObject(self, &associateKey, newValue, associatePolicy) }
+	}
+}
+
+extension UITableView {
+	var indexViewStorage: IndexViewStorage? {
+		get { objc_getAssociatedObject(self, &associateKey) as? IndexViewStorage }
+		set { objc_setAssociatedObject(self, &associateKey, newValue, associatePolicy) }
+	}
+}
+
+extension UICollectionView {
+	var indexViewStorage: IndexViewStorage? {
+		get { objc_getAssociatedObject(self, &associateKey) as? IndexViewStorage }
+		set { objc_setAssociatedObject(self, &associateKey, newValue, associatePolicy) }
+	}
+}
+
+// MARK: - UIViewController Presentation -
 @available(iOS 13, *)
 @objc public extension UITargetedPreview {
 	@objc convenience init(view: UIView, rounded rect: CGRect, cornerRadius: CGFloat = 3) {
@@ -101,105 +235,45 @@ public struct IndexedViewCellModel {
 	}
 }
 
-// MARK: - Compatible Protocols -
-// MARK: UITableView
-@objc public protocol TableViewDelegate {
-	func model(in tableView: UITableView, on indexPath: IndexPath, at pointInCell: CGPoint) -> KKPreviewModel?
+protocol InteractivePreviewStorage: AnyObject {
+	var presentingViewController: UIViewController? { get }
+	var model: PointedModel? { get set }
 }
 
-@objc public extension UITableView {
-	typealias PreviewDelegate = UIViewController & TableViewDelegate
-	var compatibleContextMenuDelegate: PreviewDelegate? {
-		get { associateValue?.delegate }
-		set {
-			guard compatibleContextMenuDelegate !== newValue else { return }
-			
-			if let storage = associateValue {
-				storage.delegate?.unregisterForPreviewing(withContext: storage.context)
-				if #available(iOS 13.0, *) {
-					removeInteraction(UIContextMenuInteraction(delegate: self))
-				}
-			}
-			
-			guard let newValue = newValue else {
-				return associateValue = nil
-			}
-			let context = newValue.registerForPreviewing(with: self, sourceView: self)
-			if #available(iOS 13.0, *) {
-				addInteraction(UIContextMenuInteraction(delegate: self))
-			}
-			associateValue = .init(delegate: newValue, context: context)
+extension Storage: InteractivePreviewStorage {
+	var presentingViewController: UIViewController? { delegate }
+}
+
+@objc public extension UIViewController {
+	func commit(_ model: KKPreviewModel) {
+		let viewController = model.previewingViewController
+		switch model.commit.style {
+		case .show: show(viewController, sender: self)
+		case .showDetail: showDetailViewController(viewController, sender: self)
+		case .custom: model.commit.handler?(viewController)
 		}
 	}
 }
 
-// MARK: UICollectionView
-@objc public protocol CollectionViewDelegate: AnyObject {
-	func model(in collectionView: UICollectionView, on indexPath: IndexPath, at pointInCell: CGPoint) -> KKPreviewModel?
-}
-
-@objc public extension UICollectionView {
-	typealias PreviewDelegate = UIViewController & CollectionViewDelegate
-	var compatibleContextMenuDelegate: PreviewDelegate? {
-		get { associateValue?.delegate }
-		set {
-			guard compatibleContextMenuDelegate !== newValue else { return }
-			
-			if let storage = associateValue {
-				storage.delegate?.unregisterForPreviewing(withContext: storage.context)
-				if #available(iOS 13.0, *) {
-					removeInteraction(UIContextMenuInteraction(delegate: self))
-				}
-			}
-			
-			guard let newValue = newValue else {
-				return associateValue = nil
-			}
-			let context = newValue.registerForPreviewing(with: self, sourceView: self)
-			if #available(iOS 13.0, *) {
-				addInteraction(UIContextMenuInteraction(delegate: self))
-			}
-			associateValue = .init(delegate: newValue, context: context)
-		}
+// MARK: Point -> Cell
+public extension UITableView {
+	/// - parameter location: location in table view
+	/// - returns: point in cell and index path of such cell
+	func convert(_ location: CGPoint) -> (cell: UIView, indexPath: IndexPath, location: CGPoint)? {
+		guard
+			let indexPath = indexPathForRow(at: location),
+			let cell = cellForRow(at: indexPath) else { return nil }
+		return (cell, indexPath, convert(location, to: cell))
 	}
 }
 
-// MARK: - Storage -
-public class Storage {
-	let context: UIViewControllerPreviewing
-	var model: IndexedViewCellModel? = nil
-	init(context: UIViewControllerPreviewing) {
-		self.context = context
+public extension UICollectionView {
+	/// - parameter location: location in table view
+	/// - returns: point in cell and index path of such cell
+	func convert(_ location: CGPoint) -> (cell: UIView, indexPath: IndexPath, location: CGPoint)? {
+		guard
+			let indexPath = indexPathForItem(at: location),
+			let cell = cellForItem(at: indexPath) else { return nil }
+		return (cell, indexPath, convert(location, to: cell))
 	}
-}
-
-public final class CollectionViewStorage: Storage {
-	typealias Delegate = UICollectionView.PreviewDelegate
-	weak var delegate: Delegate?
-	init(delegate: Delegate, context: UIViewControllerPreviewing) {
-		self.delegate = delegate
-		super.init(context: context)
-	}
-}
-
-public final class TaleViewStorage: Storage {
-	typealias Delegate = UITableView.PreviewDelegate
-	weak var delegate: Delegate?
-	init(delegate: Delegate, context: UIViewControllerPreviewing) {
-		self.delegate = delegate
-		super.init(context: context)
-	}
-}
-
-import SingleObjectAssociating
-extension SingleObjectAssociating {
-	public static var associatePolicy: objc_AssociationPolicy { .OBJC_ASSOCIATION_RETAIN }
-}
-
-extension UICollectionView: SingleObjectAssociating {
-	public typealias AssociateType = CollectionViewStorage
-}
-
-extension UITableView: SingleObjectAssociating {
-	public typealias AssociateType = TaleViewStorage
 }

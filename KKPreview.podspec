@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'KKPreview'
-  s.version          = '1.1.0'
+  s.version          = '2.0.0'
   s.summary          = 'Adapting model and protocol to support both 3D Touch and ContextMenu.'
   s.homepage         = "https://gitlab.kkinternal.com/kkbox-ios/#{s.name}"
   s.license          = { :type => 'Private', :text => 'All rights reserved to KKBOX.' }
@@ -14,7 +14,6 @@ Pod::Spec.new do |s|
 
   s.subspec 'Core' do |ss|
     ss.source_files = 'Sources/KKPreview/**/*'
-    ss.dependency 'SingleObjectAssociating', '~> 1.0'
   end
 
   s.subspec 'PreviewableViewController' do |ss|

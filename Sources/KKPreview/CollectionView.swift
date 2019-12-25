@@ -1,96 +1,83 @@
 import Foundation
 
 // MARK: UIViewControllerPreviewingDelegate
-extension UICollectionView: UIViewControllerPreviewingDelegate {
-	public func previewingContext(_ previewingContext: UIViewControllerPreviewing, viewControllerForLocation location: CGPoint) -> UIViewController? {
+@objc extension UICollectionView {
+	public override func previewingContext(_ previewingContext: UIViewControllerPreviewing, commit viewControllerToCommit: UIViewController) {
 		guard
-			let storage = associateValue,
-			let cellInfo = convert(location),
-			let model = storage.delegate?.model(in: self, on: cellInfo.indexPath, at: cellInfo.location) else { return nil }
-		storage.model = IndexedViewCellModel(model: model, indexPath: cellInfo.indexPath, pointInCell: cellInfo.location)
-		
-		if let sourceRect = model.originatedFrom {
-			previewingContext.sourceRect = sourceRect
-		}
-		return model.previewingViewController
-	}
-	
-	public func previewingContext(_ previewingContext: UIViewControllerPreviewing, commit viewControllerToCommit: UIViewController) {
-		guard
-			let storage = associateValue,
-			let delegate = storage.delegate,
-			let model = storage.model else { return }
-		assert(model.model.previewingViewController === viewControllerToCommit)
-		commit(delegate: delegate, model: model.model)
+			let storage: InteractivePreviewStorage = indexViewStorage ?? viewStorage,
+			let model = storage.model?.model else { return }
+		assert(model.previewingViewController === viewControllerToCommit)
+		storage.presentingViewController?.commit(model)
 		storage.model = nil
 	}
 }
 
 // MARK: UIContextMenuInteractionDelegate
 @available(iOS 13.0, *)
-extension UICollectionView: UIContextMenuInteractionDelegate {
-	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
-		guard
-			let storage = associateValue,
-			let cellInfo = convert(location),
-			let model = storage.delegate?.model(in: self, on: cellInfo.indexPath, at: cellInfo.location) else { return nil }
-		storage.model = IndexedViewCellModel(model: model, indexPath: cellInfo.indexPath, pointInCell: cellInfo.location)
-		
+@objc extension UICollectionView {
+	public override func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+		guard let model = askDelegateToUpdateStoredPreviewModel(at: location) else { return nil }
 		return .init(identifier: nil,
 					 previewProvider: { model.previewingViewController },
 					 actionProvider: { _ in UIMenu(actions: model.actions) }
 		)
 	}
 	
-	private var targetedPreview: UITargetedPreview? {
+	override var targetedPreview: UITargetedPreview? {
 		guard
-			let model = associateValue?.model,
-			let cell = cellForItem(at: model.indexPath) else { return nil }
+			let storage: InteractivePreviewStorage = (indexViewStorage ?? viewStorage),
+			let model = storage.model,
+			let rect = model.model.originatedFrom else { return nil }
 		
-		if let originatedRect = model.model.originatedFrom {
-			return .init(view: cell, rounded: originatedRect)
-		} else {
-			return .init(view: cell)
-		}
+		let cell = convert(model.point)?.cell
+		return .init(view: cell ?? self, rounded: rect)
 	}
 	
-	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+	public override func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+		targetedPreview
+	}
+
+	public override func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
 		targetedPreview
 	}
 	
-	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-		targetedPreview
-	}
-	
-	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
+	public override func contextMenuInteraction(_ interaction: UIContextMenuInteraction, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
 		guard
-			let storage = associateValue,
-			let delegate = storage.delegate,
-			let model = storage.model else { return }
-		assert(model.model.previewingViewController === animator.previewViewController)
+			let storage: InteractivePreviewStorage = indexViewStorage ?? viewStorage,
+			let model = storage.model?.model else { return }
+		assert(model.previewingViewController === animator.previewViewController)
 		animator.addCompletion {
-			self.commit(delegate: delegate, model: model.model)
+			storage.presentingViewController?.commit(model)
 			storage.model = nil
 		}
 	}
 }
 
-private extension UICollectionView {
-	/// - parameter location: location in table view
-	/// - returns: point in cell and index path of such cell
-	func convert(_ location: CGPoint) -> (indexPath: IndexPath, location: CGPoint)? {
-		guard
-			let indexPath = indexPathForItem(at: location),
-			let cell = cellForItem(at: indexPath) else { return nil }
-		return (indexPath, convert(location, to: cell))
-	}
-	
-	func commit(delegate: PreviewDelegate, model: KKPreviewModel) {
-		let viewController = model.previewingViewController
-		switch model.commit.style {
-		case .show: delegate.show(viewController, sender: self)
-		case .showDetail: delegate.showDetailViewController(viewController, sender: self)
-		case .custom: model.commit.handler?(viewController)
+@objc extension UICollectionView {
+	/// - returns: the updated preview model
+	override func askDelegateToUpdateStoredPreviewModel(at location: CGPoint) -> KKPreviewModel? {
+		switch (indexViewStorage, viewStorage, convert(location)) {
+		case (nil, nil, _): return nil
+		case let (storage?, _, .some(cell)):
+			guard
+				let delegate = storage.delegate,
+				let previewModel = delegate.indexedView(self, modelOn: cell.indexPath, at: cell.location) ?? delegate.view?(self, modelAt: location) else { return nil }
+			storage.model = .init(model: previewModel, point: location)
+			return previewModel
+			
+		case let (storage?, _, nil):
+			guard
+				let delegate = storage.delegate,
+				let previewModel = delegate.view?(self, modelAt: location) else { return nil }
+			storage.model = .init(model: previewModel, point: location)
+			return previewModel
+			
+		case let (nil, storage?, _):
+			guard
+				let delegate = storage.delegate,
+				let previewModel = delegate.view(self, modelAt: location) else { return nil }
+			storage.model = .init(model: previewModel, point: location)
+			return previewModel
 		}
 	}
 }
