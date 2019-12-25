@@ -108,15 +108,24 @@ public typealias IndexedPreviewDelegate = UIViewController & IndexedViewDelegate
 
 // MARK: - Delegate Property -
 @objc public extension UIView {
+	/// Unable to find the `UIContextMenuInteraction` instance previously registered because storing such iOS 13+ available instance in `Storage` would also make `Storage` iOS 13+ available, making implementation difficult.
+	@available(iOS 13.0, *)
+	func removeUIContextMenuInteractionDelegatesTo(_ delegate: UIContextMenuInteractionDelegate) {
+		interactions
+			.compactMap { $0 as? UIContextMenuInteraction }
+			.filter { $0.delegate === delegate }
+			.forEach { removeInteraction($0) }
+	}
+	
 	var previewDelegate: PreviewDelegate? {
 		get { viewStorage?.delegate }
 		set {
 			guard previewDelegate !== newValue else { return }
 			
-			if let storage = viewStorage {
-				storage.delegate?.unregisterForPreviewing(withContext: storage.context)
+			if let storage = storage as? RegisterStorage {
+				storage.viewController?.unregisterForPreviewing(withContext: storage.context)
 				if #available(iOS 13.0, *) {
-					removeInteraction(UIContextMenuInteraction(delegate: self))
+					removeUIContextMenuInteractionDelegatesTo(self)
 				}
 			}
 			
@@ -138,10 +147,10 @@ public typealias IndexedPreviewDelegate = UIViewController & IndexedViewDelegate
 		set {
 			guard indexedPreviewDelegate !== newValue else { return }
 			
-			if let storage = indexViewStorage {
-				storage.delegate?.unregisterForPreviewing(withContext: storage.context)
+			if let storage = storage as? RegisterStorage {
+				storage.viewController?.unregisterForPreviewing(withContext: storage.context)
 				if #available(iOS 13.0, *) {
-					removeInteraction(UIContextMenuInteraction(delegate: self))
+					removeUIContextMenuInteractionDelegatesTo(self)
 				}
 			}
 			
@@ -163,10 +172,10 @@ public typealias IndexedPreviewDelegate = UIViewController & IndexedViewDelegate
 		set {
 			guard indexedPreviewDelegate !== newValue else { return }
 			
-			if let storage = indexViewStorage {
-				storage.delegate?.unregisterForPreviewing(withContext: storage.context)
+			if let storage = storage as? RegisterStorage {
+				storage.viewController?.unregisterForPreviewing(withContext: storage.context)
 				if #available(iOS 13.0, *) {
-					removeInteraction(UIContextMenuInteraction(delegate: self))
+					removeUIContextMenuInteractionDelegatesTo(self)
 				}
 			}
 			
@@ -182,6 +191,15 @@ public typealias IndexedPreviewDelegate = UIViewController & IndexedViewDelegate
 	}
 }
 
+private protocol RegisterStorage {
+	var viewController: UIViewController? { get }
+	var context: UIViewControllerPreviewing { get }
+}
+
+extension Storage: RegisterStorage {
+	var viewController: UIViewController? { delegate }
+}
+
 // MARK: - Storage -
 final class Storage<T: UIViewController> {
 	let context: UIViewControllerPreviewing
@@ -194,32 +212,35 @@ final class Storage<T: UIViewController> {
 	}
 }
 
-private let associatePolicy = objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN
 /// Shared key to override `viewStorage` & `indexViewStorage`
 private var associateKey: StaticString = "KKPreviewStorageAssociataingKey"
 
 typealias ViewStorage = Storage<PreviewDelegate>
 typealias IndexViewStorage = Storage<IndexedPreviewDelegate>
 
-// FIXME: assigning both `viewStorage` and `indexViewStorage` cannot correctly unregister oldValue
 extension UIView {
+	var storage: Any? {
+		get { objc_getAssociatedObject(self, &associateKey) }
+		set { objc_setAssociatedObject(self, &associateKey, newValue, .OBJC_ASSOCIATION_RETAIN) }
+	}
+	
 	var viewStorage: ViewStorage? {
-		get { objc_getAssociatedObject(self, &associateKey) as? ViewStorage }
-		set { objc_setAssociatedObject(self, &associateKey, newValue, associatePolicy) }
+		get { storage as? ViewStorage }
+		set { storage = newValue }
 	}
 }
 
 extension UITableView {
 	var indexViewStorage: IndexViewStorage? {
-		get { objc_getAssociatedObject(self, &associateKey) as? IndexViewStorage }
-		set { objc_setAssociatedObject(self, &associateKey, newValue, associatePolicy) }
+		get { storage as? IndexViewStorage }
+		set { storage = newValue }
 	}
 }
 
 extension UICollectionView {
 	var indexViewStorage: IndexViewStorage? {
-		get { objc_getAssociatedObject(self, &associateKey) as? IndexViewStorage }
-		set { objc_setAssociatedObject(self, &associateKey, newValue, associatePolicy) }
+		get { storage as? IndexViewStorage }
+		set { storage = newValue }
 	}
 }
 
