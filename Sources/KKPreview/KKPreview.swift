@@ -3,7 +3,8 @@ import UIKit
 // MARK: - Model -
 @objcMembers
 final public class KKPreviewModel: NSObject {
-	public let previewingViewController: UIViewController
+	/// This is released right after being passed to UIKit.
+	public internal(set) var previewingViewController: UIViewController?
 	
 	public let originatedFrom: CGRect?
 	@available(swift, obsoleted: 1)
@@ -274,12 +275,11 @@ extension Storage: InteractivePreviewStorage {
 }
 
 @objc public extension UIViewController {
-	func commit(_ model: KKPreviewModel) {
-		let viewController = model.previewingViewController
-		switch model.commit.style {
+	func commit(_ commit: KKPreviewCommit, to viewController: UIViewController) {
+		switch commit.style {
 		case .show: show(viewController, sender: self)
 		case .showDetail: showDetailViewController(viewController, sender: self)
-		case .custom: model.commit.handler?(viewController)
+		case .custom: commit.handler?(viewController)
 		}
 	}
 }

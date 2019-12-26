@@ -6,8 +6,7 @@ import Foundation
 		guard
 			let storage: InteractivePreviewStorage = indexViewStorage ?? viewStorage,
 			let model = storage.model?.model else { return }
-		assert(model.previewingViewController === viewControllerToCommit)
-		storage.presentingViewController?.commit(model)
+		storage.presentingViewController?.commit(model.commit, to: viewControllerToCommit)
 		storage.model = nil
 	}
 }
@@ -17,8 +16,9 @@ import Foundation
 @objc extension UITableView {
 	public override func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
 		guard let model = askDelegateToUpdateStoredPreviewModel(at: location) else { return nil }
+		defer { model.previewingViewController = nil }
 		return .init(identifier: nil,
-					 previewProvider: { model.previewingViewController },
+					 previewProvider: { [previewingViewController = model.previewingViewController] in previewingViewController },
 					 actionProvider: { _ in UIMenu(actions: model.actions) }
 		)
 	}
@@ -44,9 +44,10 @@ import Foundation
 		guard
 			let storage: InteractivePreviewStorage = indexViewStorage ?? viewStorage,
 			let model = storage.model?.model else { return }
-		assert(model.previewingViewController === animator.previewViewController)
 		animator.addCompletion {
-			storage.presentingViewController?.commit(model)
+			if let viewControllerToCommit = animator.previewViewController {
+				storage.presentingViewController?.commit(model.commit, to: viewControllerToCommit)
+			}
 			storage.model = nil
 		}
 	}
