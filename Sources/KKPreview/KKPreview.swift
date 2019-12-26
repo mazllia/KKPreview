@@ -246,13 +246,21 @@ extension UICollectionView {
 
 // MARK: - UIViewController Presentation -
 @available(iOS 13, *)
-@objc public extension UITargetedPreview {
+public extension UITargetedPreview {
 	@objc convenience init(view: UIView, rounded rect: CGRect, cornerRadius: CGFloat = 3) {
 		let parameters = UIPreviewParameters()
 		parameters.visiblePath = .init(roundedRect: rect, cornerRadius: cornerRadius)
 		parameters.backgroundColor = .clear
 		
 		self.init(view: view, parameters: parameters)
+	}
+	
+	internal convenience init(view: UIView, rounded rect: CGRect?) {
+		if let rect = rect {
+			self.init(view: view, rounded: rect)
+		} else {
+			self.init(view: view)
+		}
 	}
 }
 

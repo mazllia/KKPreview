@@ -32,11 +32,8 @@ import Foundation
 	}
 	
 	var targetedPreview: UITargetedPreview? {
-		guard
-			let model = viewStorage?.model,
-			let rect = model.model.originatedFrom else { return nil }
-		
-		return .init(view: self, rounded: rect)
+		guard let model = viewStorage?.model else { return nil }
+		return .init(view: self, rounded: model.model.originatedFrom)
 	}
 	
 	public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {

@@ -26,11 +26,10 @@ import Foundation
 	override var targetedPreview: UITargetedPreview? {
 		guard
 			let storage: InteractivePreviewStorage = (indexViewStorage ?? viewStorage),
-			let model = storage.model,
-			let rect = model.model.originatedFrom else { return nil }
+			let model = storage.model else { return nil }
 		
 		let cell = convert(model.point)?.cell
-		return .init(view: cell ?? self, rounded: rect)
+		return .init(view: cell ?? self, rounded: model.model.originatedFrom)
 	}
 	
 	public override func contextMenuInteraction(_ interaction: UIContextMenuInteraction, previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
