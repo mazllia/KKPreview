@@ -44,24 +44,19 @@ final public class KKPreviewAction: NSObject {
 @objcMembers
 final public class KKPreviewCommit: NSObject {
 	public typealias Handler = (UIViewController) -> Void
-	let handler: Handler?
+	let completion: Handler?
 	
 	@objc public enum KKPreviewCommitStyle: UInt {
-		case show, showDetail, custom
+		case no, show, showDetail
 	}
 	public let style: KKPreviewCommitStyle
 	
-	init(style: KKPreviewCommitStyle, handler: Handler? = nil) {
+	/// Commit the style then calls the completion handler
+	public init(style: KKPreviewCommitStyle, completion: Handler? = nil) {
 		self.style = style
-		self.handler = handler
+		self.completion = completion
 		super.init()
 	}
-}
-
-@objc extension KKPreviewCommit {
-	public static let show = KKPreviewCommit(style: .show)
-	public static let showDetail = KKPreviewCommit(style: .showDetail)
-	public static func custom(_ handler: @escaping Handler) -> Self { .init(style: .custom, handler: handler) }
 }
 
 final class PointedModel {
@@ -279,8 +274,9 @@ extension Storage: InteractivePreviewStorage {
 		switch commit.style {
 		case .show: show(viewController, sender: self)
 		case .showDetail: showDetailViewController(viewController, sender: self)
-		case .custom: commit.handler?(viewController)
+		case .no: break
 		}
+		commit.completion?(viewController)
 	}
 }
 
