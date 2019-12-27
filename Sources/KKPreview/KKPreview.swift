@@ -6,7 +6,11 @@ final public class KKPreviewModel: NSObject {
 	/// This is released right after being passed to UIKit.
 	public internal(set) var previewingViewController: UIViewController?
 	
+	/// The coordinate system is:
+	/// - registered view, for `func view(_:modelAt:)`
+	/// - cell/indexedView in registered view, for `func indexedView(_:modelOn:at:):`
 	public let originatedFrom: CGRect?
+	/// This is the Objective-C compatible interface, please refer to the docs in swift version.
 	@available(swift, obsoleted: 1)
 	public var originate: CGRect { originatedFrom ?? .null }
 	
