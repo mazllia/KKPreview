@@ -52,6 +52,8 @@ final public class KKPreviewCommit: NSObject {
 	public let style: KKPreviewCommitStyle
 	
 	/// Commit the style then calls the completion handler
+	/// - parameter completion: done after commiting `style`
+	/// - warning: if you retain `previewingViewController` in `completion`, such view controller will not be released if preview is cancelled
 	public init(style: KKPreviewCommitStyle, completion: Handler? = nil) {
 		self.style = style
 		self.completion = completion
