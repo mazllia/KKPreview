@@ -44,7 +44,6 @@ import Foundation
 		guard
 			let storage: InteractivePreviewStorage = indexViewStorage ?? viewStorage,
 			let model = storage.model?.model else { return }
-		assert(model.previewingViewController === animator.previewViewController)
 		animator.addCompletion {
 			if let viewControllerToCommit = animator.previewViewController {
 				storage.presentingViewController?.commit(model.commit, to: viewControllerToCommit)
