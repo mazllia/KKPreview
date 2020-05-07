@@ -199,11 +199,11 @@ private protocol RegisterStorage {
 }
 
 extension Storage: RegisterStorage {
-	var viewController: UIViewController? { delegate }
+	var viewController: UIViewController? { delegate as? UIViewController }
 }
 
 // MARK: - Storage -
-final class Storage<T: UIViewController> {
+final class Storage<T: AnyObject> {
 	let context: UIViewControllerPreviewing
 	var model: PointedModel? = nil
 	
@@ -272,7 +272,7 @@ protocol InteractivePreviewStorage: AnyObject {
 }
 
 extension Storage: InteractivePreviewStorage {
-	var presentingViewController: UIViewController? { delegate }
+	var presentingViewController: UIViewController? { delegate as? UIViewController }
 }
 
 @objc public extension UIViewController {
